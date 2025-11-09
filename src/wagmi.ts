@@ -6,6 +6,7 @@ import {
   optimism,
   polygon,
   sepolia,
+  hardhat
 } from 'wagmi/chains';
 
 export const config = getDefaultConfig({
@@ -13,6 +14,8 @@ export const config = getDefaultConfig({
   projectId: 'YOUR_PROJECT_ID',
   chains: [
     mainnet,
+    hardhat,
+    sepolia,
     polygon,
     optimism,
     arbitrum,
