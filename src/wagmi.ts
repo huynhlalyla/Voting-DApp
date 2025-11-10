@@ -1,7 +1,7 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 import {
   sepolia,
-  rootstock,
+  rootstockTestnet,
   arbitrum,
   base,
   mainnet,
@@ -15,7 +15,7 @@ export const config = getDefaultConfig({
   projectId: 'YOUR_PROJECT_ID',
   chains: [
     sepolia,
-    rootstock,
+    rootstockTestnet,
     mainnet,
     hardhat,
     polygon,
