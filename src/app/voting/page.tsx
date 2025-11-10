@@ -142,22 +142,22 @@ export default function VotingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 transition-colors">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900">Danh sách Bỏ phiếu</h1>
-          <p className="text-gray-600 mt-2">Chọn một cuộc bỏ phiếu để xem chi tiết và tham gia</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Danh sách Bỏ phiếu</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Chọn một cuộc bỏ phiếu để xem chi tiết và tham gia</p>
         </div>
 
         {!isConnected ? (
-          <div className="text-center py-12 bg-white rounded-lg shadow">
-            <p className="text-xl text-gray-600">Vui lòng kết nối ví để sử dụng</p>
+          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
+            <p className="text-xl text-gray-600 dark:text-gray-400">Vui lòng kết nối ví để sử dụng</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Danh sách Polls */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-2xl font-bold mb-4">Danh sách Cuộc bỏ phiếu</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <h2 className="text-2xl font-bold mb-4 dark:text-white">Danh sách Cuộc bỏ phiếu</h2>
               <div className="space-y-4">
                 {polls && (polls as Poll[]).length > 0 ? (
                   (polls as Poll[]).map((poll) => (
@@ -166,23 +166,23 @@ export default function VotingPage() {
                       onClick={() => setSelectedPoll(Number(poll.id))}
                       className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                         selectedPoll === Number(poll.id)
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-blue-300'
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-400'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
                       }`}
                     >
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-lg font-semibold">{poll.title}</h3>
+                        <h3 className="text-lg font-semibold dark:text-white">{poll.title}</h3>
                         <span
                           className={`px-3 py-1 rounded-full text-sm font-medium ${
                             isPollActive(poll)
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                           }`}
                         >
                           {getPollStatus(poll)}
                         </span>
                       </div>
-                      <div className="text-sm text-gray-600 space-y-1">
+                      <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                         <p>🗳️ {poll.isPublic ? 'Công khai' : 'Riêng tư'}</p>
                         <p>
                           ⏰ {dayjs.unix(Number(poll.startTime)).format('DD/MM/YYYY HH:mm')} -{' '}
@@ -192,20 +192,20 @@ export default function VotingPage() {
                     </div>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-center py-8">Chưa có cuộc bỏ phiếu nào</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">Chưa có cuộc bỏ phiếu nào</p>
                 )}
               </div>
             </div>
 
             {/* Chi tiết Poll và Voting */}
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
               {selectedPoll !== null ? (
                 <>
-                  <h2 className="text-2xl font-bold mb-4">Ứng cử viên</h2>
+                  <h2 className="text-2xl font-bold mb-4 dark:text-white">Ứng cử viên</h2>
                   
                   {hasVoted && (
-                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-yellow-800 font-medium">✅ Bạn đã bỏ phiếu rồi</p>
+                    <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                      <p className="text-yellow-800 dark:text-yellow-300 font-medium">✅ Bạn đã bỏ phiếu rồi</p>
                     </div>
                   )}
 
@@ -218,11 +218,11 @@ export default function VotingPage() {
                         return (
                           <div
                             key={index}
-                            className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-all"
+                            className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all"
                           >
                             <div className="flex justify-between items-center mb-2">
-                              <h3 className="text-lg font-semibold">{candidate.name}</h3>
-                              <span className="text-2xl font-bold text-blue-600">
+                              <h3 className="text-lg font-semibold dark:text-white">{candidate.name}</h3>
+                              <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                                 {candidate.voteCount.toString()} phiếu
                               </span>
                             </div>
@@ -231,7 +231,7 @@ export default function VotingPage() {
                               <button
                                 onClick={() => handleVote(index)}
                                 disabled={isVoting || isConfirming}
-                                className="w-full mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                                className="w-full mt-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-blue-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
                               >
                                 {isVoting || isConfirming ? 'Đang xử lý...' : 'Bỏ phiếu'}
                               </button>
@@ -240,12 +240,12 @@ export default function VotingPage() {
                         );
                       })
                     ) : (
-                      <p className="text-gray-500 text-center py-8">Không có ứng cử viên</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-center py-8">Không có ứng cử viên</p>
                     )}
                   </div>
                 </>
               ) : (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                   <p className="text-xl">Chọn một cuộc bỏ phiếu để xem chi tiết</p>
                 </div>
               )}
