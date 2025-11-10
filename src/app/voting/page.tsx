@@ -48,6 +48,25 @@ export default function VotingPage() {
     args: selectedPoll !== null && address ? [BigInt(selectedPoll), address] : undefined,
   });
 
+  // Get voters list
+  const { data: voters, refetch: refetchVoters } = useReadContract({
+    address: VOTING_CONTRACT_ADDRESS,
+    abi: VOTING_CONTRACT_ABI,
+    functionName: 'getVoters',
+    args: selectedPoll !== null ? [BigInt(selectedPoll)] : undefined,
+  });
+
+  // Get total votes
+  const { data: totalVotes, refetch: refetchTotalVotes } = useReadContract({
+    address: VOTING_CONTRACT_ADDRESS,
+    abi: VOTING_CONTRACT_ABI,
+    functionName: 'getTotalVotes',
+    args: selectedPoll !== null ? [BigInt(selectedPoll)] : undefined,
+  });
+
+  // Type-safe voter addresses
+  const voterAddresses = voters as readonly `0x${string}`[] | undefined;
+
   // Hook để vote
   const { data: hash, writeContract, isPending: isVoting, error: writeError } = useWriteContract();
 
@@ -65,8 +84,10 @@ export default function VotingPage() {
       refetchCandidates();
       refetchHasVoted();
       refetchPolls();
+      refetchVoters();
+      refetchTotalVotes();
     }
-  }, [isConfirming, isConfirmed, refetchCandidates, refetchHasVoted, refetchPolls]);
+  }, [isConfirming, isConfirmed, refetchCandidates, refetchHasVoted, refetchPolls, refetchVoters, refetchTotalVotes]);
 
   // Handle errors
   useEffect(() => {
@@ -142,7 +163,7 @@ export default function VotingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 transition-colors">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-8 px-4 transition-colors">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Danh sách Bỏ phiếu</h1>
@@ -198,16 +219,63 @@ export default function VotingPage() {
             </div>
 
             {/* Chi tiết Poll và Voting */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              {selectedPoll !== null ? (
-                <>
-                  <h2 className="text-2xl font-bold mb-4 dark:text-white">Ứng cử viên</h2>
-                  
-                  {hasVoted && (
-                    <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg">
-                      <p className="text-yellow-800 dark:text-yellow-300 font-medium">✅ Bạn đã bỏ phiếu rồi</p>
+            <div className="space-y-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                {selectedPoll !== null ? (
+                  <>
+                    {/* Thống kê */}
+                    <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <h3 className="text-lg font-semibold mb-4 dark:text-white">📊 Thống kê</h3>
+                      
+                      {/* Tổng số liệu */}
+                      <div className="text-center mb-4">
+                        <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                          {totalVotes ? totalVotes.toString() : '0'}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Tổng số phiếu</p>
+                      </div>
+
+                      {/* Danh sách người đã bỏ phiếu */}
+                      {voterAddresses && voterAddresses.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-800">
+                          <h4 className="text-sm font-semibold mb-3 text-gray-700 dark:text-gray-300">
+                            👥 Danh sách người đã bỏ phiếu:
+                          </h4>
+                          <div className="max-h-48 overflow-y-auto space-y-2">
+                            {voterAddresses.map((voter, index) => (
+                              <div
+                                key={index}
+                                className="p-2 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-between text-sm"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-500 dark:text-gray-400 font-mono text-xs">
+                                    #{index + 1}
+                                  </span>
+                                  <div className="flex flex-col">
+                                    <span className="font-mono text-xs text-gray-700 dark:text-gray-300">
+                                      {voter}
+                                    </span>
+                                  </div>
+                                </div>
+                                {voter.toLowerCase() === address?.toLowerCase() && (
+                                  <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs rounded-full font-medium">
+                                    Bạn
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
+
+                    <h2 className="text-2xl font-bold mb-4 dark:text-white">Ứng cử viên</h2>
+                    
+                    {hasVoted && (
+                      <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                        <p className="text-yellow-800 dark:text-yellow-300 font-medium">✅ Bạn đã bỏ phiếu rồi</p>
+                      </div>
+                    )}
 
                   <div className="space-y-3">
                     {candidates && (candidates as Candidate[]).length > 0 ? (
@@ -249,6 +317,7 @@ export default function VotingPage() {
                   <p className="text-xl">Chọn một cuộc bỏ phiếu để xem chi tiết</p>
                 </div>
               )}
+              </div>
             </div>
           </div>
         )}
