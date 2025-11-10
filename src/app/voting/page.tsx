@@ -122,6 +122,7 @@ export default function VotingPage() {
         abi: VOTING_CONTRACT_ABI,
         functionName: 'vote',
         args: [BigInt(selectedPoll), BigInt(candidateId)],
+        gas: BigInt(100000), // Giới hạn gas để tránh hết tiền
       });
     } catch (error: any) {
       console.error('Error voting:', error);

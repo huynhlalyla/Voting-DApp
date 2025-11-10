@@ -138,6 +138,7 @@ export default function CreatePollPage() {
           isPublic,
           whitelistAddresses as `0x${string}`[],
         ],
+        gas: BigInt(500000), // Giới hạn gas cho tạo poll
       });
     } catch (error: any) {
       console.error('Error creating poll:', error);
