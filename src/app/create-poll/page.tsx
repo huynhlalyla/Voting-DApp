@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { VOTING_CONTRACT_ADDRESS, VOTING_CONTRACT_ABI } from '@/contracts/AdvancedVoting';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
 import toast from 'react-hot-toast';
 
 export default function CreatePollPage() {
+  const router = useRouter();
   const { address, isConnected } = useAccount();
   const [title, setTitle] = useState('');
   const [candidates, setCandidates] = useState(['', '']);
@@ -19,13 +21,13 @@ export default function CreatePollPage() {
   const { data: hash, writeContract, isPending, error: writeError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess, error: confirmError } = useWaitForTransactionReceipt({ hash });
 
-  // Toast notifications
+  // Toast notifications và chuyển hướng
   useEffect(() => {
     if (isConfirming) {
-      toast.loading('Đang xác nhận giao dịch...', { id: 'create-poll-tx' });
+      toast.loading('Đang xác nhận giao dịch...', { id: 'create-poll-tx', duration: 30000 }); // Auto dismiss sau 30s
     }
     if (isSuccess) {
-      toast.success('Tạo cuộc bỏ phiếu thành công! 🎉', { id: 'create-poll-tx' });
+      toast.success('Tạo cuộc bỏ phiếu thành công! 🎉 Đang chuyển hướng...', { id: 'create-poll-tx' });
       // Reset form
       setTitle('');
       setCandidates(['', '']);
@@ -33,27 +35,34 @@ export default function CreatePollPage() {
       setEndTime('');
       setIsPublic(true);
       setWhitelist('');
+      
+      // Chuyển hướng sau 1.5 giây để người dùng thấy thông báo
+      setTimeout(() => {
+        router.push('/voting');
+      }, 1500);
     }
-  }, [isConfirming, isSuccess]);
+  }, [isConfirming, isSuccess, router]);
 
   // Handle errors
   useEffect(() => {
     if (writeError) {
+      toast.dismiss('create-poll-tx'); // Dismiss loading toast
       const errorMessage = writeError.message;
       if (errorMessage.includes('User rejected') || errorMessage.includes('User denied')) {
-        toast.error('Bạn đã từ chối giao dịch', { id: 'create-poll-tx' });
+        toast.error('Bạn đã từ chối giao dịch', { id: 'create-poll-error' });
       } else if (errorMessage.includes('Thoi gian khong hop le')) {
-        toast.error('Thời gian không hợp lệ. Thời gian kết thúc phải sau thời gian bắt đầu', { id: 'create-poll-tx' });
+        toast.error('Thời gian không hợp lệ. Thời gian kết thúc phải sau thời gian bắt đầu', { id: 'create-poll-error' });
       } else if (errorMessage.includes('Can it nhat 2 ung cu vien')) {
-        toast.error('Cần ít nhất 2 ứng cử viên', { id: 'create-poll-tx' });
+        toast.error('Cần ít nhất 2 ứng cử viên', { id: 'create-poll-error' });
       } else if (errorMessage.includes('insufficient funds')) {
-        toast.error('Không đủ ETH để thanh toán gas fee', { id: 'create-poll-tx' });
+        toast.error('Không đủ ETH để thanh toán gas fee', { id: 'create-poll-error' });
       } else {
-        toast.error('Có lỗi xảy ra. Vui lòng thử lại!', { id: 'create-poll-tx' });
+        toast.error('Có lỗi xảy ra. Vui lòng thử lại!', { id: 'create-poll-error' });
       }
     }
     if (confirmError) {
-      toast.error('Giao dịch thất bại. Vui lòng thử lại!', { id: 'create-poll-tx' });
+      toast.dismiss('create-poll-tx'); // Dismiss loading toast
+      toast.error('Giao dịch thất bại. Vui lòng thử lại!', { id: 'create-poll-error' });
     }
   }, [writeError, confirmError]);
 
@@ -138,7 +147,7 @@ export default function CreatePollPage() {
           isPublic,
           whitelistAddresses as `0x${string}`[],
         ],
-        gas: BigInt(200000), // Giảm gas xuống ~0.0004 tRBTC
+        // Bỏ gas limit, để MetaMask tự estimate
       });
     } catch (error: any) {
       console.error('Error creating poll:', error);

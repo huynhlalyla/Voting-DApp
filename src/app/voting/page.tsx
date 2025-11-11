@@ -24,13 +24,50 @@ type Candidate = {
 export default function VotingPage() {
   const { address, isConnected } = useAccount();
   const [selectedPoll, setSelectedPoll] = useState<number | null>(null);
+  const [pollsList, setPollsList] = useState<Poll[]>([]);
 
   // Đọc tất cả polls
-  const { data: polls, refetch: refetchPolls } = useReadContract({
+  const { data: polls, refetch: refetchPolls, error: pollsError, isLoading: pollsLoading } = useReadContract({
     address: VOTING_CONTRACT_ADDRESS,
     abi: VOTING_CONTRACT_ABI,
     functionName: 'getAllPolls',
   });
+
+  // Cập nhật pollsList khi data thay đổi
+  useEffect(() => {
+    if (polls) {
+      const pollsArray = polls as Poll[];
+      setPollsList(pollsArray);
+      console.log('Updated pollsList:', pollsArray);
+    }
+  }, [polls]);
+
+  // Auto-refetch khi trang được focus hoặc mount
+  useEffect(() => {
+    refetchPolls();
+    
+    const handleFocus = () => {
+      console.log('Page focused, refetching polls...');
+      refetchPolls();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [refetchPolls]);
+
+  // Debug log
+  useEffect(() => {
+    console.log('=== VOTING PAGE DEBUG ===');
+    console.log('Contract Address:', VOTING_CONTRACT_ADDRESS);
+    console.log('Polls data (raw):', polls);
+    console.log('Polls data type:', typeof polls);
+    console.log('Polls is array?:', Array.isArray(polls));
+    console.log('PollsList state:', pollsList);
+    console.log('PollsList length:', pollsList.length);
+    console.log('Polls error:', pollsError);
+    console.log('Polls loading:', pollsLoading);
+    console.log('========================');
+  }, [polls, pollsError, pollsLoading, pollsList]);
 
   // Đọc candidates của poll được chọn
   const { data: candidates, refetch: refetchCandidates } = useReadContract({
@@ -117,7 +154,7 @@ export default function VotingPage() {
   const handleVote = async (candidateId: number) => {
     if (selectedPoll === null) return;
     
-    const poll = (polls as Poll[]).find((p) => Number(p.id) === selectedPoll);
+    const poll = pollsList.find((p) => Number(p.id) === selectedPoll);
     
     // Client-side validation
     if (poll) {
@@ -180,8 +217,20 @@ export default function VotingPage() {
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
               <h2 className="text-2xl font-bold mb-4 dark:text-white">Danh sách Cuộc bỏ phiếu</h2>
               <div className="space-y-4">
-                {polls && (polls as Poll[]).length > 0 ? (
-                  (polls as Poll[]).map((poll) => (
+                {pollsLoading ? (
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">⏳ Đang tải...</p>
+                ) : pollsError ? (
+                  <div className="text-center py-8">
+                    <p className="text-red-500 mb-2">❌ Lỗi khi tải dữ liệu</p>
+                    <p className="text-red-400 text-sm">{pollsError.message}</p>
+                  </div>
+                ) : !pollsList || pollsList.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 dark:text-gray-400 mb-2">📭 Chưa có cuộc bỏ phiếu nào</p>
+                    <p className="text-sm text-gray-400">Hãy tạo cuộc bỏ phiếu đầu tiên!</p>
+                  </div>
+                ) : (
+                  pollsList.map((poll) => (
                     <div
                       key={poll.id.toString()}
                       onClick={() => setSelectedPoll(Number(poll.id))}
@@ -212,8 +261,6 @@ export default function VotingPage() {
                       </div>
                     </div>
                   ))
-                ) : (
-                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">Chưa có cuộc bỏ phiếu nào</p>
                 )}
               </div>
             </div>
@@ -280,7 +327,7 @@ export default function VotingPage() {
                   <div className="space-y-3">
                     {candidates && (candidates as Candidate[]).length > 0 ? (
                       (candidates as Candidate[]).map((candidate, index) => {
-                        const poll = (polls as Poll[]).find((p) => Number(p.id) === selectedPoll);
+                        const poll = pollsList.find((p) => Number(p.id) === selectedPoll);
                         const canVote = poll && isPollActive(poll) && !hasVoted;
 
                         return (
