@@ -1,4 +1,5 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
+import { QueryClient } from '@tanstack/react-query';
 import {
   arbitrum,
   base,
@@ -198,6 +199,17 @@ const zkSyncSepoliaTestnet = {
   },
   testnet: true,
 } as const;
+
+// Custom QueryClient với refetchOnWindowFocus = false
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false, // Tắt refetch khi focus window
+      refetchOnMount: true, // Vẫn refetch khi mount
+      refetchOnReconnect: false, // Tắt refetch khi reconnect
+    },
+  },
+});
 
 export const config = getDefaultConfig({
   appName: 'VoteChain - Blockchain Voting',
