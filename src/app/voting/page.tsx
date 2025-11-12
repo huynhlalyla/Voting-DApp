@@ -36,9 +36,20 @@ export default function VotingPage() {
   // Cập nhật pollsList khi data thay đổi
   useEffect(() => {
     if (polls) {
-      const pollsArray = polls as Poll[];
-      setPollsList(pollsArray);
-      console.log('Updated pollsList:', pollsArray);
+      console.log('Processing polls data:', polls);
+      // Check if polls is already an array
+      if (Array.isArray(polls)) {
+        setPollsList(polls as Poll[]);
+        console.log('Set pollsList from array:', polls);
+      } else {
+        // If polls is an object, try to extract array
+        console.log('Polls is object, extracting...', polls);
+        const pollsArray = Object.values(polls).filter(item => 
+          item && typeof item === 'object' && 'id' in item
+        ) as Poll[];
+        setPollsList(pollsArray);
+        console.log('Set pollsList from object:', pollsArray);
+      }
     }
   }, [polls]);
 
