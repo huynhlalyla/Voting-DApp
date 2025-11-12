@@ -1,10 +1,11 @@
 'use client';
 
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { VOTING_CONTRACT_ADDRESS, VOTING_CONTRACT_ABI } from '@/contracts/AdvancedVoting';
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi';
+import { getContractAddress, VOTING_CONTRACT_ABI, CONTRACT_ADDRESSES } from '@/contracts/AdvancedVoting';
 import { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 import toast from 'react-hot-toast';
+import NetworkWarning from '@/components/NetworkWarning';
 
 type Poll = {
   id: bigint;
@@ -23,14 +24,22 @@ type Candidate = {
 
 export default function VotingPage() {
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const contractAddress = getContractAddress(chainId);
   const [selectedPoll, setSelectedPoll] = useState<number | null>(null);
   const [pollsList, setPollsList] = useState<Poll[]>([]);
 
+  // Check if contract deployed on current chain
+  const isContractDeployed = chainId ? CONTRACT_ADDRESSES[chainId] !== undefined : false;
+
   // Đọc tất cả polls
   const { data: polls, refetch: refetchPolls, error: pollsError, isLoading: pollsLoading } = useReadContract({
-    address: VOTING_CONTRACT_ADDRESS,
+    address: contractAddress,
     abi: VOTING_CONTRACT_ABI,
     functionName: 'getAllPolls',
+    query: {
+      enabled: isContractDeployed, // Chỉ query khi contract đã deploy
+    },
   });
 
   // Cập nhật pollsList khi data thay đổi
@@ -61,7 +70,7 @@ export default function VotingPage() {
   // Debug log
   useEffect(() => {
     console.log('=== VOTING PAGE DEBUG ===');
-    console.log('Contract Address:', VOTING_CONTRACT_ADDRESS);
+    console.log('Contract Address:', contractAddress);
     console.log('Polls data (raw):', polls);
     console.log('Polls data type:', typeof polls);
     console.log('Polls is array?:', Array.isArray(polls));
@@ -74,7 +83,7 @@ export default function VotingPage() {
 
   // Đọc candidates của poll được chọn
   const { data: candidates, refetch: refetchCandidates } = useReadContract({
-    address: VOTING_CONTRACT_ADDRESS,
+    address: contractAddress,
     abi: VOTING_CONTRACT_ABI,
     functionName: 'getCandidates',
     args: selectedPoll !== null ? [BigInt(selectedPoll)] : undefined,
@@ -82,7 +91,7 @@ export default function VotingPage() {
 
   // Check xem user đã vote chưa
   const { data: hasVoted, refetch: refetchHasVoted } = useReadContract({
-    address: VOTING_CONTRACT_ADDRESS,
+    address: contractAddress,
     abi: VOTING_CONTRACT_ABI,
     functionName: 'checkIfVoted',
     args: selectedPoll !== null && address ? [BigInt(selectedPoll), address] : undefined,
@@ -90,7 +99,7 @@ export default function VotingPage() {
 
   // Get voters list
   const { data: voters, refetch: refetchVoters } = useReadContract({
-    address: VOTING_CONTRACT_ADDRESS,
+    address: contractAddress,
     abi: VOTING_CONTRACT_ABI,
     functionName: 'getVoters',
     args: selectedPoll !== null ? [BigInt(selectedPoll)] : undefined,
@@ -98,7 +107,7 @@ export default function VotingPage() {
 
   // Get total votes
   const { data: totalVotes, refetch: refetchTotalVotes } = useReadContract({
-    address: VOTING_CONTRACT_ADDRESS,
+    address: contractAddress,
     abi: VOTING_CONTRACT_ABI,
     functionName: 'getTotalVotes',
     args: selectedPoll !== null ? [BigInt(selectedPoll)] : undefined,
@@ -179,7 +188,7 @@ export default function VotingPage() {
 
     try {
       writeContract({
-        address: VOTING_CONTRACT_ADDRESS,
+        address: contractAddress,
         abi: VOTING_CONTRACT_ABI,
         functionName: 'vote',
         args: [BigInt(selectedPoll), BigInt(candidateId)],

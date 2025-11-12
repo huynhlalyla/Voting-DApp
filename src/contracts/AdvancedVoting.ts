@@ -1,3 +1,22 @@
+// Contract addresses cho từng chain
+export const CONTRACT_ADDRESSES: Record<number, `0x${string}`> = {
+  31: '0xff63b1b0e703aA8eEc2d561933A132CBD47cD14E', // Rootstock Testnet
+  // 53: '0x...', // CoinEx Smart Chain Testnet - TODO: Deploy contract
+  // 11155111: '0x...', // Sepolia - TODO: Deploy contract
+  // 1001: '0x...', // Klaytn Baobab - TODO: Deploy contract
+  // Add more chains as you deploy...
+};
+
+// Helper function để lấy contract address theo chainId
+export const getContractAddress = (chainId: number | undefined): `0x${string}` => {
+  if (!chainId || !CONTRACT_ADDRESSES[chainId]) {
+    // Fallback về Rootstock Testnet nếu không tìm thấy
+    return CONTRACT_ADDRESSES[31];
+  }
+  return CONTRACT_ADDRESSES[chainId];
+};
+
+// Legacy export để backward compatibility (deprecated)
 export const VOTING_CONTRACT_ADDRESS = '0xff63b1b0e703aA8eEc2d561933A132CBD47cD14E' as const;
 
 export const VOTING_CONTRACT_ABI = [

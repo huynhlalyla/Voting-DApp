@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { VOTING_CONTRACT_ADDRESS, VOTING_CONTRACT_ABI } from '@/contracts/AdvancedVoting';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi';
+import { getContractAddress, VOTING_CONTRACT_ABI } from '@/contracts/AdvancedVoting';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
@@ -11,6 +11,8 @@ import toast from 'react-hot-toast';
 export default function CreatePollPage() {
   const router = useRouter();
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const contractAddress = getContractAddress(chainId);
   const [title, setTitle] = useState('');
   const [candidates, setCandidates] = useState(['', '']);
   const [startTime, setStartTime] = useState('');
@@ -136,7 +138,7 @@ export default function CreatePollPage() {
 
     try {
       writeContract({
-        address: VOTING_CONTRACT_ADDRESS,
+        address: contractAddress,
         abi: VOTING_CONTRACT_ABI,
         functionName: 'createPoll',
         args: [
