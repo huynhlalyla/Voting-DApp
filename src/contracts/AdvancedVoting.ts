@@ -1,6 +1,6 @@
 // Contract addresses cho từng chain
 export const CONTRACT_ADDRESSES: Record<number, `0x${string}`> = {
-  31: '0xff63b1b0e703aA8eEc2d561933A132CBD47cD14E', // Rootstock Testnet
+  31: '0x0dACaF6d7AC0c8988571025B08F74B6c52F9b316', // Rootstock Testnet
   // 53: '0x...', // CoinEx Smart Chain Testnet - TODO: Deploy contract
   // 11155111: '0x...', // Sepolia - TODO: Deploy contract
   // 1001: '0x...', // Klaytn Baobab - TODO: Deploy contract
