@@ -141,24 +141,35 @@ export default function VotingPage() {
   // Handle errors
   useEffect(() => {
     if (writeError) {
+      console.error('=== VOTE ERROR DEBUG ===');
+      console.error('Full error:', writeError);
+      console.error('Error message:', writeError.message);
+      console.error('Error cause:', writeError.cause);
+      console.error('=======================');
+      
       const errorMessage = writeError.message;
+      const errorString = JSON.stringify(writeError);
+      
       if (errorMessage.includes('User rejected') || errorMessage.includes('User denied')) {
         toast.error('Bạn đã từ chối giao dịch', { id: 'vote-tx' });
-      } else if (errorMessage.includes('Ban da bo phieu roi')) {
+      } else if (errorMessage.includes('AlreadyVoted') || errorString.includes('AlreadyVoted')) {
         toast.error('Bạn đã bỏ phiếu rồi!', { id: 'vote-tx' });
-      } else if (errorMessage.includes('Khong co quyen bo phieu')) {
+      } else if (errorMessage.includes('NotWhitelisted') || errorString.includes('NotWhitelisted')) {
         toast.error('Bạn không có quyền bỏ phiếu trong cuộc bỏ phiếu này', { id: 'vote-tx' });
-      } else if (errorMessage.includes('Chua den gio bo phieu')) {
+      } else if (errorMessage.includes('VotingNotStarted') || errorString.includes('VotingNotStarted')) {
         toast.error('Chưa đến giờ bỏ phiếu', { id: 'vote-tx' });
-      } else if (errorMessage.includes('Da het gio bo phieu')) {
+      } else if (errorMessage.includes('VotingEnded') || errorString.includes('VotingEnded')) {
         toast.error('Đã hết giờ bỏ phiếu', { id: 'vote-tx' });
+      } else if (errorMessage.includes('InvalidCandidateId') || errorString.includes('InvalidCandidateId')) {
+        toast.error('ID ứng cử viên không hợp lệ', { id: 'vote-tx' });
       } else if (errorMessage.includes('insufficient funds')) {
-        toast.error('Không đủ ETH để thanh toán gas fee', { id: 'vote-tx' });
+        toast.error('Không đủ tRBTC để thanh toán gas fee', { id: 'vote-tx' });
       } else {
-        toast.error('Có lỗi xảy ra. Vui lòng thử lại!', { id: 'vote-tx' });
+        toast.error(`Lỗi: ${errorMessage.slice(0, 100)}`, { id: 'vote-tx', duration: 5000 });
       }
     }
     if (confirmError) {
+      console.error('Transaction confirmation error:', confirmError);
       toast.error('Giao dịch thất bại. Vui lòng thử lại!', { id: 'vote-tx' });
     }
   }, [writeError, confirmError]);
