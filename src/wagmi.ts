@@ -210,7 +210,7 @@ const coinexTestnet = {
     symbol: 'tCET',
   },
   rpcUrls: {
-    default: { http: ['https://testnet-rpc.coinex.net'] },
+    default: { http: ['https://53.rpc.thirdweb.com '] },
     public: { http: ['https://testnet-rpc.coinex.net'] },
   },
   blockExplorers: {
