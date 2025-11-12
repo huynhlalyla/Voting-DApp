@@ -42,17 +42,9 @@ export default function VotingPage() {
     }
   }, [polls]);
 
-  // Auto-refetch khi trang được focus hoặc mount
+  // Refetch khi mount (đã TẮT auto-refetch on focus)
   useEffect(() => {
     refetchPolls();
-    
-    const handleFocus = () => {
-      console.log('Page focused, refetching polls...');
-      refetchPolls();
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
   }, [refetchPolls]);
 
   // Debug log
