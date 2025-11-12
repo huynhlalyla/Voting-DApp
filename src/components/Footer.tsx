@@ -29,7 +29,7 @@ export default function Footer() {
           {/* Cột 1: Thông tin dự án */}
           <div>
             <h3 className="text-2xl font-bold mb-3 text-white dark:text-gray-900">
-              🗳️ Voting DApp
+              Voting DApp
             </h3>
             <p className="text-gray-400 dark:text-gray-600 mb-3 text-sm">
               Bỏ phiếu phi tập trung, minh bạch & bảo mật.
