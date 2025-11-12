@@ -219,6 +219,12 @@ export default function VotingPage() {
             {/* Danh sách Polls */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
               <h2 className="text-2xl font-bold mb-4 dark:text-white">Danh sách Cuộc bỏ phiếu</h2>
+              {/* Debug info */}
+              <div className="mb-2 p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded text-xs">
+                <p>Debug: pollsList.length = {pollsList.length}</p>
+                <p>Debug: pollsLoading = {pollsLoading.toString()}</p>
+                <p>Debug: pollsError = {pollsError ? 'true' : 'false'}</p>
+              </div>
               <div className="space-y-4">
                 {pollsLoading ? (
                   <p className="text-gray-500 dark:text-gray-400 text-center py-8">⏳ Đang tải...</p>
