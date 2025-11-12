@@ -293,96 +293,104 @@ export default function VotingPage() {
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 {selectedPoll !== null ? (
                   <>
-                    {/* Thống kê */}
-                    <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <h3 className="text-lg font-semibold mb-4 dark:text-white">📊 Thống kê</h3>
-                      
-                      {/* Tổng số liệu */}
-                      <div className="text-center mb-4">
-                        <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
-                          {totalVotes ? totalVotes.toString() : '0'}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Tổng số phiếu</p>
-                      </div>
-
-                      {/* Danh sách người đã bỏ phiếu */}
-                      {voterAddresses && voterAddresses.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-800">
-                          <h4 className="text-sm font-semibold mb-3 text-gray-700 dark:text-gray-300">
-                            👥 Danh sách người đã bỏ phiếu:
-                          </h4>
-                          <div className="max-h-48 overflow-y-auto space-y-2">
-                            {voterAddresses.map((voter, index) => (
-                              <div
-                                key={index}
-                                className="p-2 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-between text-sm"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span className="text-gray-500 dark:text-gray-400 font-mono text-xs">
-                                    #{index + 1}
-                                  </span>
-                                  <div className="flex flex-col">
-                                    <span className="font-mono text-xs text-gray-700 dark:text-gray-300">
-                                      {voter}
-                                    </span>
-                                  </div>
-                                </div>
-                                {voter.toLowerCase() === address?.toLowerCase() && (
-                                  <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs rounded-full font-medium">
-                                    Bạn
-                                  </span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <h2 className="text-2xl font-bold mb-4 dark:text-white">Ứng cử viên</h2>
-                    
                     {hasVoted && (
                       <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg">
                         <p className="text-yellow-800 dark:text-yellow-300 font-medium">✅ Bạn đã bỏ phiếu rồi</p>
                       </div>
                     )}
 
-                  <div className="space-y-3">
-                    {candidates && (candidates as Candidate[]).length > 0 ? (
-                      (candidates as Candidate[]).map((candidate, index) => {
-                        const poll = pollsList.find((p) => Number(p.id) === selectedPoll);
-                        const canVote = poll && isPollActive(poll) && !hasVoted;
-
-                        return (
-                          <div
-                            key={index}
-                            className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all"
-                          >
-                            <div className="flex justify-between items-center mb-2">
-                              <h3 className="text-lg font-semibold dark:text-white">{candidate.name}</h3>
-                              <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                                {candidate.voteCount.toString()} phiếu
-                              </span>
-                            </div>
-                            
-                            {canVote && (
-                              <button
-                                onClick={() => handleVote(index)}
-                                disabled={isVoting || isConfirming}
-                                className="w-full mt-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-blue-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
-                              >
-                                {isVoting || isConfirming ? 'Đang xử lý...' : 'Bỏ phiếu'}
-                              </button>
-                            )}
+                    {/* 2 CỘT: Thống kê và Ứng cử viên */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      
+                      {/* CỘT 1: THỐNG KÊ */}
+                      <div>
+                        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                          <h3 className="text-lg font-semibold mb-4 dark:text-white">📊 Thống kê</h3>
+                          
+                          {/* Tổng số liệu */}
+                          <div className="text-center mb-4">
+                            <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                              {totalVotes ? totalVotes.toString() : '0'}
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Tổng số phiếu</p>
                           </div>
-                        );
-                      })
-                    ) : (
-                      <p className="text-gray-500 dark:text-gray-400 text-center py-8">Không có ứng cử viên</p>
-                    )}
-                  </div>
-                </>
-              ) : (
+
+                          {/* Danh sách người đã bỏ phiếu */}
+                          {voterAddresses && voterAddresses.length > 0 && (
+                            <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-800">
+                              <h4 className="text-sm font-semibold mb-3 text-gray-700 dark:text-gray-300">
+                                👥 Danh sách người đã bỏ phiếu:
+                              </h4>
+                              <div className="max-h-80 overflow-y-auto space-y-2">
+                                {voterAddresses.map((voter, index) => (
+                                  <div
+                                    key={index}
+                                    className="p-2 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-between text-sm"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-gray-500 dark:text-gray-400 font-mono text-xs">
+                                        #{index + 1}
+                                      </span>
+                                      <div className="flex flex-col">
+                                        <span className="font-mono text-xs text-gray-700 dark:text-gray-300 truncate max-w-[200px]">
+                                          {voter}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    {voter.toLowerCase() === address?.toLowerCase() && (
+                                      <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs rounded-full font-medium">
+                                        Bạn
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* CỘT 2: ỨNG CỬ VIÊN */}
+                      <div>
+                        <div className="space-y-3">
+                          {candidates && (candidates as Candidate[]).length > 0 ? (
+                            (candidates as Candidate[]).map((candidate, index) => {
+                              const poll = pollsList.find((p) => Number(p.id) === selectedPoll);
+                              const canVote = poll && isPollActive(poll) && !hasVoted;
+
+                              return (
+                                <div
+                                  key={index}
+                                  className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all"
+                                >
+                                  <div className="flex justify-between items-center mb-2">
+                                    <h3 className="text-lg font-semibold dark:text-white">{candidate.name}</h3>
+                                    <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                      {candidate.voteCount.toString()} phiếu
+                                    </span>
+                                  </div>
+                                  
+                                  {canVote && (
+                                    <button
+                                      onClick={() => handleVote(index)}
+                                      disabled={isVoting || isConfirming}
+                                      className="w-full mt-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-blue-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                      {isVoting || isConfirming ? 'Đang xử lý...' : 'Bỏ phiếu'}
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <p className="text-gray-500 dark:text-gray-400 text-center py-8">Không có ứng cử viên</p>
+                          )}
+                        </div>
+                      </div>
+                    
+                    </div>
+                  </>
+                ) : (
                 <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                   <p className="text-xl">Chọn một cuộc bỏ phiếu để xem chi tiết</p>
                 </div>
