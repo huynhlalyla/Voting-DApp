@@ -200,6 +200,25 @@ const zkSyncSepoliaTestnet = {
   testnet: true,
 } as const;
 
+// CoinEx Smart Chain Testnet
+const coinexTestnet = {
+  id: 53,
+  name: 'CoinEx Smart Chain Testnet',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'CET',
+    symbol: 'tCET',
+  },
+  rpcUrls: {
+    default: { http: ['https://testnet-rpc.coinex.net'] },
+    public: { http: ['https://testnet-rpc.coinex.net'] },
+  },
+  blockExplorers: {
+    default: { name: 'CoinEx Explorer', url: 'https://testnet.coinex.net' },
+  },
+  testnet: true,
+} as const;
+
 // Custom QueryClient với refetchOnWindowFocus = false
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -216,6 +235,7 @@ export const config = getDefaultConfig({
   projectId: 'YOUR_PROJECT_ID',
   chains: [
     rootstockTestnet,
+    coinexTestnet,
     sepolia,
     klaytnBaobab,
     cronosTestnet,
