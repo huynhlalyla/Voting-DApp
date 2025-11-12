@@ -79,8 +79,10 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Dark Mode Toggle, Connect Wallet & Mobile Menu */}
+          {/* Connect Wallet, Dark Mode Toggle & Mobile Menu */}
           <div className="flex items-center gap-4">
+            <ConnectButton />
+            
             {/* Dark Mode Button */}
             <button
               onClick={toggleDarkMode}
@@ -97,8 +99,6 @@ export default function Navbar() {
                 </svg>
               )}
             </button>
-
-            <ConnectButton />
             
             {/* Mobile Menu Button */}
             <button
