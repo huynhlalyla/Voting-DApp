@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 
 import { Providers } from './providers';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: 'VoteChain - Hệ thống Bỏ phiếu Blockchain',
@@ -17,10 +18,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi">
-      <body>
+      <body className="flex flex-col min-h-screen">
         <Providers>
           <Navbar />
-          {children}
+          <main className="flex-grow">
+            {children}
+          </main>
+          <Footer />
         </Providers>
       </body>
     </html>
