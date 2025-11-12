@@ -94,7 +94,7 @@ export default function VotingPage() {
       for (const poll of pollsList) {
         try {
           const totalVotes = await publicClient.readContract({
-            address: contractAddress,
+            address: contractAddress as `0x${string}`,
             abi: VOTING_CONTRACT_ABI,
             functionName: 'getTotalVotes',
             args: [poll.id],
@@ -110,7 +110,8 @@ export default function VotingPage() {
     };
 
     fetchVoteCounts();
-  }, [pollsList, isContractDeployed, contractAddress, chainId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pollsList, isContractDeployed, chainId]);
 
   // Refetch khi mount (đã TẮT auto-refetch on focus)
   useEffect(() => {
@@ -516,7 +517,7 @@ export default function VotingPage() {
                 <div className="mt-4 flex items-center justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">
                     📊 Hiển thị <span className="font-bold text-blue-600 dark:text-blue-400">{filteredPolls.length}</span> / {pollsList.length} cuộc bỏ phiếu
-                    {searchQuery && <span className="text-gray-500 dark:text-gray-400"> với từ khóa "{searchQuery}"</span>}
+                    {searchQuery && <span className="text-gray-500 dark:text-gray-400"> với từ khóa &quot;{searchQuery}&quot;</span>}
                   </span>
                 </div>
               )}
