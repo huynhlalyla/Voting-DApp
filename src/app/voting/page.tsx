@@ -342,6 +342,16 @@ export default function VotingPage() {
     return matchesSearch && matchesStatus && matchesMyPolls;
   });
 
+  // Reset selectedPoll if it's not in filteredPolls
+  useEffect(() => {
+    if (selectedPoll !== null && filteredPolls.length > 0) {
+      const isPollInFiltered = filteredPolls.some(poll => Number(poll.id) === selectedPoll);
+      if (!isPollInFiltered) {
+        setSelectedPoll(null);
+      }
+    }
+  }, [filteredPolls, selectedPoll]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-8 px-4 transition-colors">
       <div className="max-w-7xl mx-auto">
@@ -515,10 +525,32 @@ export default function VotingPage() {
               {/* Results Summary */}
               {!pollsLoading && pollsList.length > 0 && (
                 <div className="mt-4 flex items-center justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    📊 Hiển thị <span className="font-bold text-blue-600 dark:text-blue-400">{filteredPolls.length}</span> / {pollsList.length} cuộc bỏ phiếu
-                    {searchQuery && <span className="text-gray-500 dark:text-gray-400"> với từ khóa &quot;{searchQuery}&quot;</span>}
-                  </span>
+                  <div className="flex-1">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      📊 Hiển thị <span className="font-bold text-blue-600 dark:text-blue-400">{filteredPolls.length}</span> / {pollsList.length} cuộc bỏ phiếu
+                    </span>
+                    {(searchQuery || statusFilter !== 'all' || showMyPolls) && (
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        {searchQuery && (
+                          <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">
+                            🔍 &quot;{searchQuery}&quot;
+                          </span>
+                        )}
+                        {statusFilter !== 'all' && (
+                          <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-full">
+                            {statusFilter === 'active' && '🟢 Đang diễn ra'}
+                            {statusFilter === 'upcoming' && '🟡 Sắp diễn ra'}
+                            {statusFilter === 'ended' && '⚫ Đã kết thúc'}
+                          </span>
+                        )}
+                        {showMyPolls && (
+                          <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full">
+                            👤 Poll của tôi
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -545,7 +577,25 @@ export default function VotingPage() {
                 ) : filteredPolls.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500 dark:text-gray-400 mb-2">🔍 Không tìm thấy kết quả</p>
-                    <p className="text-sm text-gray-400">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                    <p className="text-sm text-gray-400 mb-3">
+                      {showMyPolls 
+                        ? 'Bạn chưa tạo Poll nào. Hãy tạo Poll đầu tiên!'
+                        : searchQuery 
+                          ? `Không có Poll nào khớp với "${searchQuery}"`
+                          : 'Thử thay đổi bộ lọc trạng thái'}
+                    </p>
+                    {(searchQuery || statusFilter !== 'all' || showMyPolls) && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery('');
+                          setStatusFilter('all');
+                          setShowMyPolls(false);
+                        }}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                      >
+                        🔄 Xóa tất cả bộ lọc
+                      </button>
+                    )}
                   </div>
                 ) : (
                   filteredPolls.map((poll) => {
@@ -640,7 +690,7 @@ export default function VotingPage() {
             {/* Chi tiết Poll và Voting */}
             <div className="space-y-6">
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                {selectedPoll !== null ? (
+                {selectedPoll !== null && filteredPolls.some(poll => Number(poll.id) === selectedPoll) ? (
                   <>
                     {hasVoted && (
                       <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg">
@@ -741,7 +791,21 @@ export default function VotingPage() {
                   </>
                 ) : (
                 <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                  <p className="text-xl">Chọn một cuộc bỏ phiếu để xem chi tiết</p>
+                  <p className="text-xl mb-2">
+                    {filteredPolls.length === 0 
+                      ? '📭 Không có cuộc bỏ phiếu nào'
+                      : '👈 Chọn một cuộc bỏ phiếu để xem chi tiết'
+                    }
+                  </p>
+                  {filteredPolls.length === 0 && (searchQuery || statusFilter !== 'all' || showMyPolls) && (
+                    <p className="text-sm text-gray-400 mb-4">
+                      {showMyPolls 
+                        ? 'Bạn chưa tạo Poll nào'
+                        : statusFilter !== 'all'
+                          ? `Không có Poll nào ${statusFilter === 'active' ? 'đang diễn ra' : statusFilter === 'upcoming' ? 'sắp diễn ra' : 'đã kết thúc'}`
+                          : 'Thử thay đổi bộ lọc'}
+                    </p>
+                  )}
                 </div>
               )}
               </div>
