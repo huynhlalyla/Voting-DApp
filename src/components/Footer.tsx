@@ -22,26 +22,26 @@ export default function Footer() {
     : '#';
 
   return (
-    <footer className="bg-gradient-to-r from-indigo-900 via-purple-900 to-pink-900 text-white mt-auto">
+    <footer className="bg-gray-900 text-white mt-auto border-t border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           {/* Cột 1: Thông tin dự án */}
           <div>
-            <h3 className="text-2xl font-bold mb-3 bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-transparent">
+            <h3 className="text-2xl font-bold mb-3 text-white">
               🗳️ Voting DApp
             </h3>
-            <p className="text-gray-300 mb-3 text-sm">
+            <p className="text-gray-400 mb-3 text-sm">
               Bỏ phiếu phi tập trung, minh bạch & bảo mật.
             </p>
             <div className="flex flex-wrap gap-2">
-              <span className="px-2 py-1 bg-indigo-800/50 rounded-full text-xs">
+              <span className="px-2 py-1 bg-gray-800 rounded text-xs text-gray-300">
                 ⚡ Web3
               </span>
-              <span className="px-2 py-1 bg-purple-800/50 rounded-full text-xs">
+              <span className="px-2 py-1 bg-gray-800 rounded text-xs text-gray-300">
                 🔐 Secure
               </span>
-              <span className="px-2 py-1 bg-pink-800/50 rounded-full text-xs">
+              <span className="px-2 py-1 bg-gray-800 rounded text-xs text-gray-300">
                 🌐 Decentralized
               </span>
             </div>
@@ -49,7 +49,7 @@ export default function Footer() {
 
           {/* Cột 2: Smart Contract & Explorer */}
           <div>
-            <h3 className="text-lg font-bold mb-3 text-pink-300">
+            <h3 className="text-lg font-bold mb-3 text-gray-100">
               📜 Smart Contract
             </h3>
             <div className="space-y-2">
@@ -75,7 +75,7 @@ export default function Footer() {
                   href={contractLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-500 hover:to-purple-500 transition-all text-sm font-medium"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-all text-sm font-medium"
                 >
                   <span>🔍</span>
                   <span>Xem trên Explorer</span>
@@ -97,7 +97,7 @@ export default function Footer() {
 
           {/* Cột 3: Liên hệ & Links */}
           <div>
-            <h3 className="text-lg font-bold mb-3 text-purple-300">
+            <h3 className="text-lg font-bold mb-3 text-gray-100">
               🔗 Liên Kết
             </h3>
             <div className="space-y-2">
