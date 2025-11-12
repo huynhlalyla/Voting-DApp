@@ -19,14 +19,17 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            // Giá trị CSP mới cho phép 'unsafe-eval'
-            value: "default-src 'self'; " +
-                   "script-src 'self' 'unsafe-eval' 'unsafe-inline'; " +
-                   "style-src 'self' 'unsafe-inline'; " +
-                   "img-src 'self' data: *; " + // Cho phép ảnh từ mọi nguồn
-                   "font-src 'self'; " +
-                   "connect-src *; " + // Cho phép kết nối tới mọi RPC
-                   "frame-src *;",     // Cho phép pop-up của ví
+            // Giá trị CSP mới cho phép 'unsafe-eval' cho Web3/Blockchain
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https: blob:",
+              "font-src 'self' data:",
+              "connect-src 'self' https: wss: ws:",
+              "frame-src 'self' https:",
+              "worker-src 'self' blob:",
+            ].join('; '),
           },
         ],
       },
