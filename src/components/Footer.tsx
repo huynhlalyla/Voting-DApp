@@ -23,26 +23,25 @@ export default function Footer() {
 
   return (
     <footer className="bg-gradient-to-r from-indigo-900 via-purple-900 to-pink-900 text-white mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           {/* Cột 1: Thông tin dự án */}
           <div>
-            <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-transparent">
+            <h3 className="text-2xl font-bold mb-3 bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-transparent">
               🗳️ Voting DApp
             </h3>
-            <p className="text-gray-300 mb-4 leading-relaxed">
-              Hệ thống bỏ phiếu phi tập trung trên Blockchain, 
-              đảm bảo tính minh bạch, bảo mật và không thể can thiệp.
+            <p className="text-gray-300 mb-3 text-sm">
+              Bỏ phiếu phi tập trung, minh bạch & bảo mật.
             </p>
             <div className="flex flex-wrap gap-2">
-              <span className="px-3 py-1 bg-indigo-800/50 rounded-full text-sm">
+              <span className="px-2 py-1 bg-indigo-800/50 rounded-full text-xs">
                 ⚡ Web3
               </span>
-              <span className="px-3 py-1 bg-purple-800/50 rounded-full text-sm">
+              <span className="px-2 py-1 bg-purple-800/50 rounded-full text-xs">
                 🔐 Secure
               </span>
-              <span className="px-3 py-1 bg-pink-800/50 rounded-full text-sm">
+              <span className="px-2 py-1 bg-pink-800/50 rounded-full text-xs">
                 🌐 Decentralized
               </span>
             </div>
@@ -50,10 +49,10 @@ export default function Footer() {
 
           {/* Cột 2: Smart Contract & Explorer */}
           <div>
-            <h3 className="text-xl font-bold mb-4 text-pink-300">
+            <h3 className="text-lg font-bold mb-3 text-pink-300">
               📜 Smart Contract
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div>
                 <p className="text-gray-400 text-sm mb-1">Contract Address:</p>
                 <a
@@ -98,10 +97,10 @@ export default function Footer() {
 
           {/* Cột 3: Liên hệ & Links */}
           <div>
-            <h3 className="text-xl font-bold mb-4 text-purple-300">
+            <h3 className="text-lg font-bold mb-3 text-purple-300">
               🔗 Liên Kết
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2">
               
               {/* GitHub Repository */}
               <a
@@ -158,7 +157,7 @@ export default function Footer() {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-white/10 mt-8 pt-8">
+        <div className="border-t border-white/10 mt-6 pt-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             
             {/* Copyright */}
