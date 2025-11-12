@@ -255,3 +255,29 @@ export const config = getDefaultConfig({
   ],
   ssr: true,
 });
+
+// Helper function to get chain by chainId
+export const getChain = (chainId: number) => {
+  const chains = [
+    rootstockTestnet,
+    coinexTestnet,
+    sepolia,
+    klaytnBaobab,
+    cronosTestnet,
+    auroraTestnet,
+    moonbaseAlpha,
+    gnosisChiado,
+    celoAlfajores,
+    fantomTestnet,
+    polygonZkEvmCardona,
+    zkSyncSepoliaTestnet,
+    hardhat,
+    mainnet,
+    polygon,
+    optimism,
+    arbitrum,
+    base,
+  ];
+  
+  return chains.find(chain => chain.id === chainId);
+};

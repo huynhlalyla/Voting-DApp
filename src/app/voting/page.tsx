@@ -22,12 +22,19 @@ type Candidate = {
   voteCount: bigint;
 };
 
+type StatusFilter = 'all' | 'active' | 'upcoming' | 'ended';
+
 export default function VotingPage() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const contractAddress = getContractAddress(chainId);
   const [selectedPoll, setSelectedPoll] = useState<number | null>(null);
   const [pollsList, setPollsList] = useState<Poll[]>([]);
+  
+  // Filter & Search states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [showMyPolls, setShowMyPolls] = useState(false);
 
   // Check if contract deployed on current chain
   const isContractDeployed = chainId ? CONTRACT_ADDRESSES[chainId] !== undefined : false;
@@ -41,6 +48,9 @@ export default function VotingPage() {
       enabled: isContractDeployed, // Chỉ query khi contract đã deploy
     },
   });
+
+  // Track total votes for each poll
+  const [pollVoteCounts, setPollVoteCounts] = useState<Record<string, bigint>>({});
 
   // Cập nhật pollsList khi data thay đổi
   useEffect(() => {
@@ -62,10 +72,65 @@ export default function VotingPage() {
     }
   }, [polls]);
 
+  // Fetch vote counts for all polls (to show in poll cards)
+  useEffect(() => {
+    const fetchVoteCounts = async () => {
+      if (!isContractDeployed || pollsList.length === 0 || typeof window === 'undefined') return;
+      
+      const counts: Record<string, bigint> = {};
+      
+      // Sử dụng wagmi's publicClient thay vì ethers
+      const { createPublicClient, http } = await import('viem');
+      const { getChain } = await import('@/wagmi');
+      
+      const chain = getChain(chainId);
+      if (!chain) return;
+      
+      const publicClient = createPublicClient({
+        chain,
+        transport: http(),
+      });
+      
+      for (const poll of pollsList) {
+        try {
+          const totalVotes = await publicClient.readContract({
+            address: contractAddress,
+            abi: VOTING_CONTRACT_ABI,
+            functionName: 'getTotalVotes',
+            args: [poll.id],
+          });
+          counts[poll.id.toString()] = totalVotes as bigint;
+        } catch (error) {
+          console.error(`Error fetching votes for poll ${poll.id}:`, error);
+          counts[poll.id.toString()] = BigInt(0);
+        }
+      }
+      
+      setPollVoteCounts(counts);
+    };
+
+    fetchVoteCounts();
+  }, [pollsList, isContractDeployed, contractAddress, chainId]);
+
   // Refetch khi mount (đã TẮT auto-refetch on focus)
   useEffect(() => {
     refetchPolls();
   }, [refetchPolls]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const dropdown = document.getElementById('filter-dropdown');
+      const button = event.target as HTMLElement;
+      
+      if (dropdown && !dropdown.contains(button) && !button.closest('button')?.textContent?.includes('Bộ lọc')) {
+        dropdown.classList.add('hidden');
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   // Debug log
   useEffect(() => {
@@ -215,12 +280,66 @@ export default function VotingPage() {
     return now >= poll.startTime && now <= poll.endTime;
   };
 
-  const getPollStatus = (poll: Poll) => {
+  const getPollStatus = (poll: Poll): StatusFilter => {
     const now = BigInt(Math.floor(Date.now() / 1000));
-    if (now < poll.startTime) return 'Chưa bắt đầu';
-    if (now > poll.endTime) return 'Đã kết thúc';
+    if (now < poll.startTime) return 'upcoming';
+    if (now > poll.endTime) return 'ended';
+    return 'active';
+  };
+
+  const getPollStatusText = (poll: Poll) => {
+    const status = getPollStatus(poll);
+    if (status === 'upcoming') return 'Sắp diễn ra';
+    if (status === 'ended') return 'Đã kết thúc';
     return 'Đang diễn ra';
   };
+
+  const getTimeRemaining = (poll: Poll) => {
+    const now = Math.floor(Date.now() / 1000);
+    const status = getPollStatus(poll);
+    
+    let targetTime: number;
+    let prefix: string;
+    
+    if (status === 'upcoming') {
+      targetTime = Number(poll.startTime);
+      prefix = 'Bắt đầu sau';
+    } else if (status === 'active') {
+      targetTime = Number(poll.endTime);
+      prefix = 'Kết thúc sau';
+    } else {
+      return 'Đã kết thúc';
+    }
+    
+    const diff = targetTime - now;
+    if (diff <= 0) return 'Đã kết thúc';
+    
+    const days = Math.floor(diff / 86400);
+    const hours = Math.floor((diff % 86400) / 3600);
+    const minutes = Math.floor((diff % 3600) / 60);
+    
+    if (days > 0) return `${prefix} ${days} ngày ${hours} giờ`;
+    if (hours > 0) return `${prefix} ${hours} giờ ${minutes} phút`;
+    return `${prefix} ${minutes} phút`;
+  };
+
+  // Filter polls based on search, status, and "my polls"
+  const filteredPolls = pollsList.filter((poll) => {
+    // Search filter
+    const matchesSearch = 
+      poll.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      poll.id.toString().includes(searchQuery);
+    
+    // Status filter
+    const pollStatus = getPollStatus(poll);
+    const matchesStatus = statusFilter === 'all' || pollStatus === statusFilter;
+    
+    // My polls filter (created by me OR I voted in it)
+    const matchesMyPolls = !showMyPolls || 
+      poll.creator.toLowerCase() === address?.toLowerCase();
+    
+    return matchesSearch && matchesStatus && matchesMyPolls;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-8 px-4 transition-colors">
@@ -235,11 +354,181 @@ export default function VotingPage() {
             <p className="text-xl text-gray-600 dark:text-gray-400">Vui lòng kết nối ví để sử dụng</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <>
+            {/* HEADER: Search & Filter */}
+            <div className="mb-8 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                {/* Search Bar */}
+                <div className="flex-1 w-full">
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                      🔍
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm theo tên hoặc ID..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-12 pr-10 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 dark:bg-gray-700 dark:text-white transition-colors"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Filter Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      const dropdown = document.getElementById('filter-dropdown');
+                      if (dropdown) {
+                        dropdown.classList.toggle('hidden');
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors font-medium shadow-md"
+                  >
+                    <span className="text-xl">⚙️</span>
+                    <span>Bộ lọc</span>
+                    {(statusFilter !== 'all' || showMyPolls) && (
+                      <span className="ml-1 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">
+                        {(statusFilter !== 'all' ? 1 : 0) + (showMyPolls ? 1 : 0)}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  <div
+                    id="filter-dropdown"
+                    className="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border-2 border-gray-200 dark:border-gray-700 z-50"
+                  >
+                    <div className="p-4 space-y-4">
+                      {/* Status Filter Section */}
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                          📊 Trạng thái
+                        </h3>
+                        <div className="space-y-2">
+                          <button
+                            onClick={() => {
+                              setStatusFilter('all');
+                              document.getElementById('filter-dropdown')?.classList.add('hidden');
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                              statusFilter === 'all'
+                                ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-semibold'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            Tất cả
+                          </button>
+                          <button
+                            onClick={() => {
+                              setStatusFilter('active');
+                              document.getElementById('filter-dropdown')?.classList.add('hidden');
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                              statusFilter === 'active'
+                                ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 font-semibold'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            🟢 Đang diễn ra
+                          </button>
+                          <button
+                            onClick={() => {
+                              setStatusFilter('upcoming');
+                              document.getElementById('filter-dropdown')?.classList.add('hidden');
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                              statusFilter === 'upcoming'
+                                ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300 font-semibold'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            🟡 Sắp diễn ra
+                          </button>
+                          <button
+                            onClick={() => {
+                              setStatusFilter('ended');
+                              document.getElementById('filter-dropdown')?.classList.add('hidden');
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                              statusFilter === 'ended'
+                                ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            ⚫ Đã kết thúc
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Divider */}
+                      <div className="border-t border-gray-200 dark:border-gray-700"></div>
+
+                      {/* My Polls Toggle */}
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                          👤 Người tạo
+                        </h3>
+                        <label className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={showMyPolls}
+                            onChange={(e) => setShowMyPolls(e.target.checked)}
+                            className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                            Chỉ Poll của tôi
+                          </span>
+                        </label>
+                      </div>
+
+                      {/* Clear All Button */}
+                      {(statusFilter !== 'all' || showMyPolls) && (
+                        <>
+                          <div className="border-t border-gray-200 dark:border-gray-700"></div>
+                          <button
+                            onClick={() => {
+                              setStatusFilter('all');
+                              setShowMyPolls(false);
+                              document.getElementById('filter-dropdown')?.classList.add('hidden');
+                            }}
+                            className="w-full px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 font-medium transition-colors"
+                          >
+                            🗑️ Xóa tất cả bộ lọc
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Results Summary */}
+              {!pollsLoading && pollsList.length > 0 && (
+                <div className="mt-4 flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    📊 Hiển thị <span className="font-bold text-blue-600 dark:text-blue-400">{filteredPolls.length}</span> / {pollsList.length} cuộc bỏ phiếu
+                    {searchQuery && <span className="text-gray-500 dark:text-gray-400"> với từ khóa "{searchQuery}"</span>}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Danh sách Polls */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <h2 className="text-2xl font-bold mb-4 dark:text-white">Danh sách Cuộc bỏ phiếu</h2>
-              <div className="space-y-4">
+              <h2 className="text-2xl font-bold mb-6 dark:text-white">Danh sách Cuộc bỏ phiếu</h2>
+
+              {/* Polls List */}
+              <div className="space-y-4 max-h-[600px] overflow-y-auto">
                 {pollsLoading ? (
                   <p className="text-gray-500 dark:text-gray-400 text-center py-8">⏳ Đang tải...</p>
                 ) : pollsError ? (
@@ -252,38 +541,97 @@ export default function VotingPage() {
                     <p className="text-gray-500 dark:text-gray-400 mb-2">📭 Chưa có cuộc bỏ phiếu nào</p>
                     <p className="text-sm text-gray-400">Hãy tạo cuộc bỏ phiếu đầu tiên!</p>
                   </div>
+                ) : filteredPolls.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 dark:text-gray-400 mb-2">🔍 Không tìm thấy kết quả</p>
+                    <p className="text-sm text-gray-400">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                  </div>
                 ) : (
-                  pollsList.map((poll) => (
-                    <div
-                      key={poll.id.toString()}
-                      onClick={() => setSelectedPoll(Number(poll.id))}
-                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                        selectedPoll === Number(poll.id)
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-400'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-lg font-semibold dark:text-white">{poll.title}</h3>
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            isPollActive(poll)
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
-                              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                          }`}
-                        >
-                          {getPollStatus(poll)}
-                        </span>
+                  filteredPolls.map((poll) => {
+                    const status = getPollStatus(poll);
+                    const isCreator = poll.creator.toLowerCase() === address?.toLowerCase();
+                    
+                    return (
+                      <div
+                        key={poll.id.toString()}
+                        onClick={() => setSelectedPoll(Number(poll.id))}
+                        className={`p-5 border-2 rounded-xl cursor-pointer transition-all hover:shadow-lg ${
+                          selectedPoll === Number(poll.id)
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-400 shadow-md'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
+                        }`}
+                      >
+                        {/* Header: Title + Status Badge */}
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-bold dark:text-white mb-1">{poll.title}</h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">ID: {poll.id.toString()}</p>
+                          </div>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
+                              status === 'active'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
+                                : status === 'upcoming'
+                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300'
+                                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            {getPollStatusText(poll)}
+                          </span>
+                        </div>
+
+                        {/* Countdown Timer */}
+                        <div className="mb-3 p-2 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg">
+                          <p className="text-sm font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-2">
+                            ⏰ {getTimeRemaining(poll)}
+                          </p>
+                        </div>
+
+                        {/* Poll Info */}
+                        <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span>🗳️</span>
+                            <span>{poll.isPublic ? 'Công khai' : 'Riêng tư'}</span>
+                            {isCreator && (
+                              <span className="ml-auto px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs rounded-full font-medium">
+                                Của bạn
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span>📅</span>
+                            <span>
+                              {dayjs.unix(Number(poll.startTime)).format('DD/MM/YY HH:mm')} → {dayjs.unix(Number(poll.endTime)).format('DD/MM/YY HH:mm')}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Progress Bar with Total Votes */}
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-2">
+                            <span className="font-medium">👥 Mức độ tham gia</span>
+                            <span className="font-bold text-blue-600 dark:text-blue-400">
+                              {pollVoteCounts[poll.id.toString()]?.toString() || '0'} phiếu
+                            </span>
+                          </div>
+                          {/* Progress Bar */}
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                            <div
+                              className="bg-gradient-to-r from-blue-500 to-purple-500 h-full rounded-full transition-all duration-500"
+                              style={{
+                                width: `${Math.min(Number(pollVoteCounts[poll.id.toString()] || BigInt(0)) * 10, 100)}%`
+                              }}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
+                            {Number(pollVoteCounts[poll.id.toString()] || BigInt(0)) === 0 
+                              ? 'Chưa có ai bỏ phiếu' 
+                              : `${pollVoteCounts[poll.id.toString()]?.toString()} người đã tham gia`}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                        <p>🗳️ {poll.isPublic ? 'Công khai' : 'Riêng tư'}</p>
-                        <p>
-                          ⏰ {dayjs.unix(Number(poll.startTime)).format('DD/MM/YYYY HH:mm')} -{' '}
-                          {dayjs.unix(Number(poll.endTime)).format('DD/MM/YYYY HH:mm')}
-                        </p>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -398,6 +746,7 @@ export default function VotingPage() {
               </div>
             </div>
           </div>
+          </>
         )}
       </div>
     </div>
