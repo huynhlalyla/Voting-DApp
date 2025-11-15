@@ -358,9 +358,9 @@ export default function VotingPage() {
     const pollStatus = getPollStatus(poll);
     const matchesStatus = statusFilter === 'all' || pollStatus === statusFilter;
     
-    // My polls filter (created by me OR I voted in it)
+    // My polls filter (created by me OR I voted in it) - chỉ khi đã kết nối
     const matchesMyPolls = !showMyPolls || 
-      poll.creator.toLowerCase() === address?.toLowerCase();
+      (address && poll.creator.toLowerCase() === address.toLowerCase());
     
     return matchesSearch && matchesStatus && matchesMyPolls;
   });
@@ -383,12 +383,8 @@ export default function VotingPage() {
           <p className="text-gray-600 dark:text-gray-400 mt-2">Chọn một cuộc bỏ phiếu để xem chi tiết và tham gia</p>
         </div>
 
-        {!isConnected ? (
-          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
-            <p className="text-xl text-gray-600 dark:text-gray-400">Vui lòng kết nối ví để sử dụng</p>
-          </div>
-        ) : (
-          <>
+        {/* Hiển thị polls ngay cả khi chưa kết nối ví */}
+        <>
             {/* HEADER: Search & Filter */}
             <div className="mb-8 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
               <div className="flex flex-col md:flex-row gap-4 items-center">
@@ -794,29 +790,39 @@ export default function VotingPage() {
                                   
                                   {canVote && (
                                     <>
-                                      {chainId !== ROOTSTOCK_CHAIN_ID && (
-                                        <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg">
-                                          <p className="text-xs text-yellow-800 dark:text-yellow-300 text-center">
-                                            ⚠️ Cần chuyển sang Rootstock để bỏ phiếu
+                                      {!isConnected ? (
+                                        <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg">
+                                          <p className="text-sm text-blue-800 dark:text-blue-300 text-center font-medium">
+                                            🔗 Vui lòng kết nối ví để bỏ phiếu
                                           </p>
                                         </div>
+                                      ) : (
+                                        <>
+                                          {chainId !== ROOTSTOCK_CHAIN_ID && (
+                                            <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                                              <p className="text-xs text-yellow-800 dark:text-yellow-300 text-center">
+                                                ⚠️ Cần chuyển sang Rootstock để bỏ phiếu
+                                              </p>
+                                            </div>
+                                          )}
+                                          <button
+                                            onClick={() => handleVote(index)}
+                                            disabled={isVoting || isConfirming}
+                                            className={`w-full mt-2 px-4 py-2 text-white rounded-lg font-medium disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors ${
+                                              chainId !== ROOTSTOCK_CHAIN_ID
+                                                ? 'bg-yellow-600 dark:bg-yellow-700 hover:bg-yellow-700 dark:hover:bg-yellow-600'
+                                                : 'bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600'
+                                            }`}
+                                          >
+                                            {isVoting || isConfirming 
+                                              ? 'Đang xử lý...' 
+                                              : chainId !== ROOTSTOCK_CHAIN_ID
+                                                ? '🔄 Chuyển sang Rootstock & Bỏ phiếu'
+                                                : 'Bỏ phiếu'
+                                            }
+                                          </button>
+                                        </>
                                       )}
-                                      <button
-                                        onClick={() => handleVote(index)}
-                                        disabled={isVoting || isConfirming}
-                                        className={`w-full mt-2 px-4 py-2 text-white rounded-lg font-medium disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors ${
-                                          chainId !== ROOTSTOCK_CHAIN_ID
-                                            ? 'bg-yellow-600 dark:bg-yellow-700 hover:bg-yellow-700 dark:hover:bg-yellow-600'
-                                            : 'bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600'
-                                        }`}
-                                      >
-                                        {isVoting || isConfirming 
-                                          ? 'Đang xử lý...' 
-                                          : chainId !== ROOTSTOCK_CHAIN_ID
-                                            ? '🔄 Chuyển sang Rootstock & Bỏ phiếu'
-                                            : 'Bỏ phiếu'
-                                        }
-                                      </button>
                                     </>
                                   )}
                                 </div>
@@ -853,7 +859,6 @@ export default function VotingPage() {
             </div>
           </div>
           </>
-        )}
       </div>
     </div>
   );

@@ -37,16 +37,16 @@ export default function Navbar() {
 
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-md sticky top-0 z-50 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+          {/* Logo - Sát lề trái */}
           <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
             <div className="text-3xl">🗳️</div>
             <span className="text-xl font-bold text-gray-900 dark:text-white">VoteChain</span>
           </Link>
 
-          {/* Navigation Menu */}
-          <div className="hidden md:flex items-center space-x-8">
+          {/* Navigation Menu - Giữa */}
+          <div className="hidden md:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
             <Link
               href="/"
               className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -79,7 +79,7 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Connect Wallet, Dark Mode Toggle & Mobile Menu */}
+          {/* Connect Wallet & Dark Mode - Sát lề phải */}
           <div className="flex items-center gap-4">
             <ConnectButton />
             
