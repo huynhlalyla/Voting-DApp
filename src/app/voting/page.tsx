@@ -385,6 +385,40 @@ export default function VotingPage() {
           <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
             <p className="text-xl text-gray-600 dark:text-gray-400">Vui lòng kết nối ví để sử dụng</p>
           </div>
+        ) : !isContractDeployed ? (
+          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div className="max-w-2xl mx-auto p-6">
+              <div className="text-6xl mb-4">❌</div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                Contract chưa được deploy trên mạng này
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Ứng dụng VoteChain hiện chỉ hoạt động trên <span className="font-bold text-blue-600 dark:text-blue-400">Rootstock Testnet</span>.
+              </p>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                  <span className="font-semibold">Mạng được hỗ trợ:</span>
+                </p>
+                <ul className="text-left space-y-2 text-sm">
+                  {Object.entries(CONTRACT_ADDRESSES).map(([id, address]) => (
+                    <li key={id} className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                      <span className="text-green-500">✓</span>
+                      <span className="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                        Chain ID: {id}
+                      </span>
+                      {id === '31' && <span className="text-blue-600 dark:text-blue-400 font-semibold">(Rootstock Testnet)</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <button
+                onClick={() => switchChain({ chainId: ROOTSTOCK_CHAIN_ID })}
+                className="px-6 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg font-semibold hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors shadow-md"
+              >
+                🔄 Chuyển sang Rootstock Testnet
+              </button>
+            </div>
+          </div>
         ) : (
           <>
             {/* HEADER: Search & Filter */}
