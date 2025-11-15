@@ -26,7 +26,14 @@ type StatusFilter = 'all' | 'active' | 'upcoming' | 'ended';
 export default function VotingPage() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const contractAddress = getContractAddress(chainId);
+  
+  // Chain switching
+  const { switchChain } = useSwitchChain();
+  const ROOTSTOCK_CHAIN_ID = 31; // Rootstock Testnet
+  
+  // Always read from Rootstock contract regardless of current network
+  const contractAddress = CONTRACT_ADDRESSES[ROOTSTOCK_CHAIN_ID];
+  
   const [selectedPoll, setSelectedPoll] = useState<number | null>(null);
   const [pollsList, setPollsList] = useState<Poll[]>([]);
   
@@ -35,21 +42,12 @@ export default function VotingPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [showMyPolls, setShowMyPolls] = useState(false);
 
-  // Chain switching
-  const { switchChain } = useSwitchChain();
-  const ROOTSTOCK_CHAIN_ID = 31; // Rootstock Testnet
-
-  // Check if contract deployed on current chain
-  const isContractDeployed = chainId ? CONTRACT_ADDRESSES[chainId] !== undefined : false;
-
-  // Đọc tất cả polls
+  // Đọc tất cả polls (always from Rootstock)
   const { data: polls, refetch: refetchPolls, error: pollsError, isLoading: pollsLoading } = useReadContract({
-    address: contractAddress,
+    address: contractAddress as `0x${string}`,
     abi: VOTING_CONTRACT_ABI,
     functionName: 'getAllPolls',
-    query: {
-      enabled: isContractDeployed, // Chỉ query khi contract đã deploy
-    },
+    chainId: ROOTSTOCK_CHAIN_ID, // Force read from Rootstock
   });
 
   // Track total votes for each poll
@@ -75,10 +73,10 @@ export default function VotingPage() {
     }
   }, [polls]);
 
-  // Fetch vote counts for all polls (to show in poll cards)
+  // Fetch vote counts for all polls (to show in poll cards) - always from Rootstock
   useEffect(() => {
     const fetchVoteCounts = async () => {
-      if (!isContractDeployed || pollsList.length === 0 || typeof window === 'undefined') return;
+      if (pollsList.length === 0 || typeof window === 'undefined') return;
       
       const counts: Record<string, bigint> = {};
       
@@ -86,7 +84,7 @@ export default function VotingPage() {
       const { createPublicClient, http } = await import('viem');
       const { getChain } = await import('@/wagmi');
       
-      const chain = getChain(chainId);
+      const chain = getChain(ROOTSTOCK_CHAIN_ID);
       if (!chain) return;
       
       const publicClient = createPublicClient({
@@ -114,7 +112,7 @@ export default function VotingPage() {
 
     fetchVoteCounts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pollsList, isContractDeployed, chainId]);
+  }, [pollsList]);
 
   // Refetch khi mount (đã TẮT auto-refetch on focus)
   useEffect(() => {
@@ -150,36 +148,40 @@ export default function VotingPage() {
     console.log('========================');
   }, [polls, pollsError, pollsLoading, pollsList]);
 
-  // Đọc candidates của poll được chọn
+  // Đọc candidates của poll được chọn (from Rootstock)
   const { data: candidates, refetch: refetchCandidates } = useReadContract({
-    address: contractAddress,
+    address: contractAddress as `0x${string}`,
     abi: VOTING_CONTRACT_ABI,
     functionName: 'getCandidates',
     args: selectedPoll !== null ? [BigInt(selectedPoll)] : undefined,
+    chainId: ROOTSTOCK_CHAIN_ID,
   });
 
-  // Check xem user đã vote chưa
+  // Check xem user đã vote chưa (from Rootstock)
   const { data: hasVoted, refetch: refetchHasVoted } = useReadContract({
-    address: contractAddress,
+    address: contractAddress as `0x${string}`,
     abi: VOTING_CONTRACT_ABI,
     functionName: 'checkIfVoted',
     args: selectedPoll !== null && address ? [BigInt(selectedPoll), address] : undefined,
+    chainId: ROOTSTOCK_CHAIN_ID,
   });
 
-  // Get voters list
+  // Get voters list (from Rootstock)
   const { data: voters, refetch: refetchVoters } = useReadContract({
-    address: contractAddress,
+    address: contractAddress as `0x${string}`,
     abi: VOTING_CONTRACT_ABI,
     functionName: 'getVoters',
     args: selectedPoll !== null ? [BigInt(selectedPoll)] : undefined,
+    chainId: ROOTSTOCK_CHAIN_ID,
   });
 
-  // Get total votes
+  // Get total votes (from Rootstock)
   const { data: totalVotes, refetch: refetchTotalVotes } = useReadContract({
-    address: contractAddress,
+    address: contractAddress as `0x${string}`,
     abi: VOTING_CONTRACT_ABI,
     functionName: 'getTotalVotes',
     args: selectedPoll !== null ? [BigInt(selectedPoll)] : undefined,
+    chainId: ROOTSTOCK_CHAIN_ID,
   });
 
   // Type-safe voter addresses
@@ -286,11 +288,11 @@ export default function VotingPage() {
 
     try {
       writeContract({
-        address: contractAddress,
+        address: contractAddress as `0x${string}`,
         abi: VOTING_CONTRACT_ABI,
         functionName: 'vote',
         args: [BigInt(selectedPoll), BigInt(candidateId)],
-        // Bỏ gas limit, để MetaMask tự estimate
+        chainId: ROOTSTOCK_CHAIN_ID, // Ensure transaction goes to Rootstock
       });
     } catch (error: any) {
       console.error('Error voting:', error);
@@ -384,40 +386,6 @@ export default function VotingPage() {
         {!isConnected ? (
           <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
             <p className="text-xl text-gray-600 dark:text-gray-400">Vui lòng kết nối ví để sử dụng</p>
-          </div>
-        ) : !isContractDeployed ? (
-          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
-            <div className="max-w-2xl mx-auto p-6">
-              <div className="text-6xl mb-4">❌</div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-                Contract chưa được deploy trên mạng này
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                Ứng dụng VoteChain hiện chỉ hoạt động trên <span className="font-bold text-blue-600 dark:text-blue-400">Rootstock Testnet</span>.
-              </p>
-              <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-                <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-                  <span className="font-semibold">Mạng được hỗ trợ:</span>
-                </p>
-                <ul className="text-left space-y-2 text-sm">
-                  {Object.entries(CONTRACT_ADDRESSES).map(([id, address]) => (
-                    <li key={id} className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                      <span className="text-green-500">✓</span>
-                      <span className="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                        Chain ID: {id}
-                      </span>
-                      {id === '31' && <span className="text-blue-600 dark:text-blue-400 font-semibold">(Rootstock Testnet)</span>}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <button
-                onClick={() => switchChain({ chainId: ROOTSTOCK_CHAIN_ID })}
-                className="px-6 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg font-semibold hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors shadow-md"
-              >
-                🔄 Chuyển sang Rootstock Testnet
-              </button>
-            </div>
           </div>
         ) : (
           <>
