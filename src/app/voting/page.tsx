@@ -1,11 +1,10 @@
 'use client';
 
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain } from 'wagmi';
 import { getContractAddress, VOTING_CONTRACT_ABI, CONTRACT_ADDRESSES } from '@/contracts/AdvancedVoting';
 import { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 import toast from 'react-hot-toast';
-import NetworkWarning from '@/components/NetworkWarning';
 
 type Poll = {
   id: bigint;
@@ -35,6 +34,10 @@ export default function VotingPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [showMyPolls, setShowMyPolls] = useState(false);
+
+  // Chain switching
+  const { switchChain } = useSwitchChain();
+  const ROOTSTOCK_CHAIN_ID = 31; // Rootstock Testnet
 
   // Check if contract deployed on current chain
   const isContractDeployed = chainId ? CONTRACT_ADDRESSES[chainId] !== undefined : false;
@@ -261,6 +264,24 @@ export default function VotingPage() {
     if (hasVoted) {
       toast.error('✅ Bạn đã bỏ phiếu rồi');
       return;
+    }
+
+    // Check if user is on Rootstock, if not, request switch
+    if (chainId !== ROOTSTOCK_CHAIN_ID) {
+      toast.loading('Đang chuyển sang mạng Rootstock...', { id: 'switch-network' });
+      try {
+        await switchChain({ chainId: ROOTSTOCK_CHAIN_ID });
+        toast.success('Đã chuyển sang Rootstock! Vui lòng bỏ phiếu lại.', { id: 'switch-network' });
+        return; // User needs to click vote button again after switching
+      } catch (error: any) {
+        console.error('Error switching chain:', error);
+        if (error.message?.includes('User rejected')) {
+          toast.error('Bạn đã từ chối chuyển mạng', { id: 'switch-network' });
+        } else {
+          toast.error('Không thể chuyển mạng. Vui lòng chuyển thủ công sang Rootstock.', { id: 'switch-network' });
+        }
+        return;
+      }
     }
 
     try {
@@ -770,13 +791,31 @@ export default function VotingPage() {
                                   </div>
                                   
                                   {canVote && (
-                                    <button
-                                      onClick={() => handleVote(index)}
-                                      disabled={isVoting || isConfirming}
-                                      className="w-full mt-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-blue-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                      {isVoting || isConfirming ? 'Đang xử lý...' : 'Bỏ phiếu'}
-                                    </button>
+                                    <>
+                                      {chainId !== ROOTSTOCK_CHAIN_ID && (
+                                        <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                                          <p className="text-xs text-yellow-800 dark:text-yellow-300 text-center">
+                                            ⚠️ Cần chuyển sang Rootstock để bỏ phiếu
+                                          </p>
+                                        </div>
+                                      )}
+                                      <button
+                                        onClick={() => handleVote(index)}
+                                        disabled={isVoting || isConfirming}
+                                        className={`w-full mt-2 px-4 py-2 text-white rounded-lg font-medium disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors ${
+                                          chainId !== ROOTSTOCK_CHAIN_ID
+                                            ? 'bg-yellow-600 dark:bg-yellow-700 hover:bg-yellow-700 dark:hover:bg-yellow-600'
+                                            : 'bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600'
+                                        }`}
+                                      >
+                                        {isVoting || isConfirming 
+                                          ? 'Đang xử lý...' 
+                                          : chainId !== ROOTSTOCK_CHAIN_ID
+                                            ? '🔄 Chuyển sang Rootstock & Bỏ phiếu'
+                                            : 'Bỏ phiếu'
+                                        }
+                                      </button>
+                                    </>
                                   )}
                                 </div>
                               );
