@@ -37,19 +37,19 @@ export default function Navbar() {
 
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-md sticky top-0 z-50 transition-colors">
-      <div className="max-w-full px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo - Sát lề trái */}
-          <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity flex-shrink-0">
             <div className="text-3xl">🗳️</div>
             <span className="text-xl font-bold text-gray-900 dark:text-white">VoteChain</span>
           </Link>
 
-          {/* Navigation Menu - Giữa */}
-          <div className="hidden md:flex items-center space-x-8 absolute left-1/2 transform -translate-x-1/2">
+          {/* Navigation Menu - Desktop */}
+          <div className="hidden md:flex items-center space-x-8 flex-1 justify-center">
             <Link
               href="/"
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
                 isActive('/')
                   ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -59,7 +59,7 @@ export default function Navbar() {
             </Link>
             <Link
               href="/voting"
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
                 isActive('/voting')
                   ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -69,7 +69,7 @@ export default function Navbar() {
             </Link>
             <Link
               href="/create-poll"
-              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
                 isActive('/create-poll')
                   ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -79,8 +79,8 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Connect Wallet & Dark Mode - Sát lề phải */}
-          <div className="flex items-center gap-4">
+          {/* Connect Wallet & Dark Mode */}
+          <div className="flex items-center gap-4 flex-shrink-0">
             <ConnectButton />
             
             {/* Dark Mode Button */}
