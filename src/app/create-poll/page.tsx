@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi';
-import { getContractAddress, VOTING_CONTRACT_ABI } from '@/contracts/AdvancedVoting';
+import { useState, useEffect, useRef } from 'react';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain } from 'wagmi';
+import { getContractAddress, VOTING_CONTRACT_ABI, CONTRACT_ADDRESSES } from '@/contracts/AdvancedVoting';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
@@ -12,13 +12,18 @@ export default function CreatePollPage() {
   const router = useRouter();
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const contractAddress = getContractAddress(chainId);
+  const { switchChain } = useSwitchChain();
+  
+  // Always use Rootstock for creating polls
+  const ROOTSTOCK_CHAIN_ID = 31;
+  const contractAddress = CONTRACT_ADDRESSES[ROOTSTOCK_CHAIN_ID];
   const [title, setTitle] = useState('');
   const [candidates, setCandidates] = useState(['', '']);
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const [whitelist, setWhitelist] = useState('');
+  const pendingSubmitRef = useRef(false);
 
   const { data: hash, writeContract, isPending, error: writeError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess, error: confirmError } = useWaitForTransactionReceipt({ hash });
@@ -45,6 +50,39 @@ export default function CreatePollPage() {
     }
   }, [isConfirming, isSuccess, router]);
 
+  // Auto submit after switching to Rootstock
+  useEffect(() => {
+    if (pendingSubmitRef.current && chainId === ROOTSTOCK_CHAIN_ID) {
+      pendingSubmitRef.current = false;
+      toast.success('Đã chuyển sang Rootstock! Đang tạo poll...', { id: 'switch-network' });
+      
+      // Đợi 1000ms để đảm bảo MetaMask đã kết nối ổn định
+      setTimeout(() => {
+        const filteredCandidates = candidates.filter(c => c.trim() !== '');
+        const startTimestamp = BigInt(dayjs(startTime).unix());
+        const endTimestamp = BigInt(dayjs(endTime).unix());
+        const whitelistAddresses = isPublic 
+          ? [] 
+          : whitelist.split('\n').map(addr => addr.trim()).filter(addr => addr.length > 0);
+        
+        writeContract({
+          address: contractAddress as `0x${string}`,
+          abi: VOTING_CONTRACT_ABI,
+          functionName: 'createPoll',
+          args: [
+            title,
+            filteredCandidates,
+            startTimestamp,
+            endTimestamp,
+            isPublic,
+            whitelistAddresses as `0x${string}`[],
+          ],
+          chainId: ROOTSTOCK_CHAIN_ID,
+        });
+      }, 1000);
+    }
+  }, [chainId, candidates, startTime, endTime, isPublic, whitelist, title, contractAddress, writeContract, ROOTSTOCK_CHAIN_ID]);
+
   // Handle errors
   useEffect(() => {
     if (writeError) {
@@ -57,7 +95,7 @@ export default function CreatePollPage() {
       } else if (errorMessage.includes('Can it nhat 2 ung cu vien')) {
         toast.error('Cần ít nhất 2 ứng cử viên', { id: 'create-poll-error' });
       } else if (errorMessage.includes('insufficient funds')) {
-        toast.error('Không đủ ETH để thanh toán gas fee', { id: 'create-poll-error' });
+        toast.error('Không đủ tRBTC để thanh toán gas fee', { id: 'create-poll-error' });
       } else {
         toast.error('Có lỗi xảy ra. Vui lòng thử lại!', { id: 'create-poll-error' });
       }
@@ -136,9 +174,55 @@ export default function CreatePollPage() {
       }
     }
 
+    // Check if user is on Rootstock, if not, request switch
+    if (chainId !== ROOTSTOCK_CHAIN_ID) {
+      const confirmSwitch = window.confirm(
+        '⚠️ Bạn cần chuyển sang mạng Rootstock Testnet để tạo poll.\n\n' +
+        'Sau khi chuyển mạng thành công, hệ thống sẽ tự động tạo poll cho bạn.\n\n' +
+        'Bạn có muốn tiếp tục?'
+      );
+      
+      if (!confirmSwitch) {
+        toast.error('Đã hủy tạo poll', { id: 'switch-network' });
+        return;
+      }
+      
+      toast.loading('Đang chuyển sang mạng Rootstock...', { id: 'switch-network' });
+      try {
+        await switchChain({ chainId: ROOTSTOCK_CHAIN_ID });
+        
+        // Đợi một chút và verify xem có thực sự chuyển mạng không
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Đọc chainId trực tiếp từ MetaMask để verify
+        if (typeof window !== 'undefined' && window.ethereum) {
+          const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+          const currentChainIdDecimal = parseInt(currentChainId, 16);
+          
+          if (currentChainIdDecimal !== ROOTSTOCK_CHAIN_ID) {
+            toast.error('MetaMask chưa chuyển sang Rootstock. Vui lòng chuyển thủ công.', { id: 'switch-network' });
+            return;
+          }
+        }
+        
+        console.log('Setting pendingSubmitRef.current = true');
+        pendingSubmitRef.current = true;
+        // Không return ở đây, để useEffect tự động submit
+        return;
+      } catch (error: any) {
+        pendingSubmitRef.current = false; // Reset nếu chuyển mạng thất bại
+        if (error.message?.includes('User rejected') || error.message?.includes('User denied')) {
+          toast.error('Bạn đã từ chối chuyển mạng', { id: 'switch-network' });
+        } else {
+          toast.error('Không thể chuyển mạng. Vui lòng chuyển thủ công sang Rootstock.', { id: 'switch-network' });
+        }
+        return;
+      }
+    }
+
     try {
       writeContract({
-        address: contractAddress,
+        address: contractAddress as `0x${string}`,
         abi: VOTING_CONTRACT_ABI,
         functionName: 'createPoll',
         args: [
@@ -149,6 +233,7 @@ export default function CreatePollPage() {
           isPublic,
           whitelistAddresses as `0x${string}`[],
         ],
+        chainId: ROOTSTOCK_CHAIN_ID,
         // Bỏ gas limit, để MetaMask tự estimate
       });
     } catch (error: any) {
