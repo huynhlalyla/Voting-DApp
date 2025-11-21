@@ -177,9 +177,12 @@ export default function CreatePollPage() {
     // Check if user is on Rootstock, if not, request switch
     if (chainId !== ROOTSTOCK_CHAIN_ID) {
       const confirmSwitch = window.confirm(
-        '⚠️ Bạn cần chuyển sang mạng Rootstock Testnet để tạo poll.\n\n' +
-        'Sau khi chuyển mạng thành công, hệ thống sẽ tự động tạo poll cho bạn.\n\n' +
-        'Bạn có muốn tiếp tục?'
+        '⚠️ CẢNH BÁO: Mạng không được hỗ trợ!\n\n' +
+        '❌ Smart contract chỉ được triển khai trên mạng Rootstock Testnet.\n' +
+        '❌ Bạn đang kết nối với mạng khác, không thể tạo poll.\n\n' +
+        '✅ Hệ thống sẽ tự động chuyển bạn sang Rootstock Testnet.\n' +
+        '✅ Và hãy tạo lại poll.\n\n' +
+        'Bạn có đồng ý chuyển mạng không?'
       );
       
       if (!confirmSwitch) {
