@@ -545,11 +545,8 @@ export default function VotingPage() {
               {!pollsLoading && pollsList.length > 0 && (
                 <div className="mt-4 flex items-center justify-between text-sm">
                   <div className="flex-1">
-                    <span className="text-gray-600 dark:text-gray-400">
-                      📊 Hiển thị <span className="font-bold text-blue-600 dark:text-blue-400">{filteredPolls.length}</span> / {pollsList.length} cuộc bỏ phiếu
-                    </span>
                     {(searchQuery || statusFilter !== 'all' || showMyPolls) && (
-                      <div className="mt-1 flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2">
                         {searchQuery && (
                           <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">
                             🔍 &quot;{searchQuery}&quot;
